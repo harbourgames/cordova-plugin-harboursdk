@@ -1,0 +1,42 @@
+{
+  "name": "cordova-plugin-harboursdk",
+  "version": "0.0.1",
+  "description": "",
+  "author": "Jim Lake",
+  "license": "MIT",
+  "keywords": [
+    "ecosystem:cordova",
+    "cordova-ios"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "prepublishOnly": "npm run build",
+    "lint": "eslint src/js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harbourgames/cordova-plugin-harboursdk.git"
+  },
+  "cordova": {
+    "id": "cordova-plugin-harboursdk",
+    "platforms": [
+      "ios"
+    ]
+  },
+  "browserslist": [
+    "iOS >= 9",
+    "ChromeAndroid > 50",
+    "Android > 4"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "@babel/core": "^7.1.5",
+    "@babel/preset-env": "^7.1.0",
+    "rollup": "^0.67.1",
+    "rollup-plugin-babel": "^4.0.0",
+    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-node-resolve": "^3.4.0",
+    "rollup-plugin-replace": "^2.1.0",
+    "rollup-plugin-uglify": "^6.0.0"
+  }
+}
