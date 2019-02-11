@@ -1,7 +1,7 @@
 {
   "name": "cordova-plugin-harboursdk",
   "version": "0.0.1",
-  "description": "",
+  "description": "Cordova plugin for the HarbourSDK",
   "author": "Jim Lake",
   "license": "MIT",
   "keywords": [
