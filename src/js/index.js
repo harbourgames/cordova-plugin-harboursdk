@@ -1,11 +1,9 @@
 
-import { asyncSeries, } from './tools/util.js';
-
+import { initializeAsync, setLoadingProgress, startGameAsync } from './startup.js';
 import { context } from './context';
 import { getLeaderboardAsync } from './leaderboard';
 import { payments } from './payments';
 import { player } from './player'
-import UI from './ui';
 
 const HarbourSDK = {
   player,
@@ -34,9 +32,6 @@ const HarbourSDK = {
 };
 module.exports = HarbourSDK;
 
-let g_heyzapPublisherId;
-let g_heyzapInitialized = false;
-
 function getLocale() {
   let locale = 'en-US';
   if (window.navigator) {
@@ -48,31 +43,7 @@ function getLocale() {
   }
   return locale;
 }
-function initializeAsync(opts) {
-  g_heyzapPublisherId = opts.heyzapPublisherId;
 
-  return new Promise(resolve => {
-    asyncSeries([
-      _deviceReady,
-      _heyzapInit,
-    ],err => {
-      UI.addLoader(opts);
-      resolve();
-    });
-  });
-}
-function setLoadingProgress(progress) {
-  return new Promise(resolve => {
-    UI.setLoaderText(progress.toFixed() + '% Loaded');
-    resolve();
-  });
-}
-function startGameAsync() {
-  return new Promise(resolve => {
-    UI.removeLoader();
-    resolve();
-  });
-}
 function quit() {
   window.close();
 }
@@ -123,7 +94,7 @@ function onPause(callback) {
   window.onblur = callback;
 }
 function getInterstitialAdAsync() {
-  if (g_heyzapInitialized) {
+  if (window.HarbourSDK.heyzapInitialized) {
     return new Promise((resolve,reject) => {
       window.HeyzapAds.VideoAd.fetch().then(() => {
         resolve({
@@ -140,7 +111,7 @@ function getInterstitialAdAsync() {
   }
 }
 function getRewardedVideoAsync() {
-  if (g_heyzapInitialized) {
+  if (window.HarbourSDK.heyzapInitialized) {
     return new Promise((resolve,reject) => {
       window.HeyzapAds.IncentivizedAd.fetch().then(() => {
         resolve({
@@ -157,29 +128,11 @@ function getRewardedVideoAsync() {
   }
 }
 function debugHeyzap() {
-  if (!g_heyzapInitialized) {
+  if (!window.HarbourSDK.heyzapInitialized) {
     console.error("HarbourSDK: debugHeyzap before init");
   }
 
   return window.HeyzapAds.showMediationTestSuite();
-}
-
-function _deviceReady(done) {
-  document.addEventListener('deviceready',() => done(),false);
-}
-
-function _heyzapInit(done) {
-  if (g_heyzapPublisherId) {
-    window.HeyzapAds.start(g_heyzapPublisherId).then(() => {
-      g_heyzapInitialized = true;
-      done();
-    },err => {
-      console.error("HarbourSDK: Heyzap init failed:",err);
-      done();
-    });
-  } else {
-    done();
-  }
 }
 
 function _showVideoAd() {

@@ -1,5 +1,8 @@
 
+import UI from "./ui";
+
 export const player = {
+  setAppId,
   isLoggedIn,
   checkLoginStatus,
   login,
@@ -22,22 +25,86 @@ export const player = {
   subscribeBotAsync,
 };
 
-let g_isLoggedIn = true;
-let g_uid = "12345";
-let g_email = "foo@bar.com";
-let g_name = "Player 1";
-let g_photoUrl = "";
-let g_signedRequest = "fake";
+let g_appId;
+let g_isLoggedIn = false;
+let g_uid;
+let g_email;
+let g_name;
+let g_photoUrl;
+let g_signedRequest;
+let g_accessToken;
 let g_loginSuccessCallback;
 
+function setAppId(app_id) {
+  g_appId = app_id;
+}
 function isLoggedIn() {
   return g_isLoggedIn;
 }
 function checkLoginStatus(done) {
-  done(null,g_isLoggedIn);
+  if (window.facebookConnectPlugin) {
+    window.facebookConnectPlugin.getLoginStatus(response => {
+      if (response.status === "connected") {
+        g_uid = response.authResponse.userID;
+        g_signedRequest = response.authResponse.signedRequest;
+        g_accessToken = response.authResponse.accessToken;
+        _postLogin(() => done());
+      } else {
+        g_isLoggedIn = false;
+        done && done();
+      }
+    },err => {
+      g_isLoggedIn = false;
+      done && done();
+    });
+  } else {
+    done && done();
+  }
 }
-
-function login() {
+function login(done) {
+  if (window.facebookConnectPlugin) {
+    const scopes = ['email'];
+    window.facebookConnectPlugin.login(scopes,response => {
+      let err;
+      if (response && response.status === "connected") {
+        g_uid = response.authResponse.userID;
+        g_signedRequest = response.authResponse.signedRequest;
+        g_accessToken = response.authResponse.accessToken;
+        _postLogin(done);
+      } else {
+        err = response.status;
+        done && done(err);
+      }
+    },err => {
+      done && done(err);
+    });
+  } else {
+    done && done('no_facebook_plugin');
+  }
+}
+function _postLogin(done) {
+  if (window.facebookConnectPlugin) {
+    const fields = "email,name,picture.type(large)";
+    window.facebookConnectPlugin.api(`/me?fields=${fields}`,[],response => {
+      let err;
+      if (!response || response.error) {
+        err = response ? response.error : 'no_response';
+      } else {
+        g_email = response.email;
+        g_name = response.name;
+        g_photoUrl = _getUrl(response.picture);
+        g_isLoggedIn = true;
+        g_loginSuccessCallback && g_loginSuccessCallback();
+        g_loginSuccessCallback = null;
+        UI.removeLoginButton();
+      }
+      done && done(err);
+    },err => {
+      done && done(err);
+    });
+  } else {
+    done && done('no_facebook_plugin');
+  }
 }
 
 function onLoginButtonPress() {
@@ -84,6 +151,8 @@ function getSignedPlayerInfoAsync() {
   return Promise.resolve({
     getSignature: () => g_signedRequest,
     getPlayerID: getID,
+    getAppID: () => g_appId,
+    getAccessToken: () => g_accessToken,
   });
 }
 function canSubscribeBotAsync() {
