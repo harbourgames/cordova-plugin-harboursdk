@@ -29,6 +29,7 @@ const HarbourSDK = {
   getRewardedVideoAsync,
   getLeaderboardAsync,
   debugHeyzap,
+  getDeviceId,
 };
 module.exports = HarbourSDK;
 
@@ -152,4 +153,17 @@ function _showRewardedAd() {
       reject({ code: 'NETWORK_FAILURE' })
     });
   });
+}
+function getDeviceId() {
+  if (window.cordova && window.cordova.plugins && window.cordova.plugins.idfa) {
+    return new Promise((resolve,reject) => {
+      window.cordova.plugins.idfa.getInfo().then(info => {
+        resolve(info.idfa || info.aaid);
+      },err => {
+        reject({ code: 'NOT_AVAILABLE' });
+      });
+    });
+  } else {
+    return Promise.reject({ code: 'NOT_AVAILABLE', });
+  }
 }

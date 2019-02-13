@@ -569,7 +569,8 @@ var HarbourSDK = {
   getInterstitialAdAsync: getInterstitialAdAsync,
   getRewardedVideoAsync: getRewardedVideoAsync,
   getLeaderboardAsync: getLeaderboardAsync,
-  debugHeyzap: debugHeyzap
+  debugHeyzap: debugHeyzap,
+  getDeviceId: getDeviceId
 };
 module.exports = HarbourSDK;
 
@@ -740,5 +741,23 @@ function _showRewardedAd() {
       });
     });
   });
+}
+
+function getDeviceId() {
+  if (window.cordova && window.cordova.plugins && window.cordova.plugins.idfa) {
+    return new Promise(function (resolve, reject) {
+      window.cordova.plugins.idfa.getInfo().then(function (info) {
+        resolve(info.idfa || info.aaid);
+      }, function (err) {
+        reject({
+          code: 'NOT_AVAILABLE'
+        });
+      });
+    });
+  } else {
+    return Promise.reject({
+      code: 'NOT_AVAILABLE'
+    });
+  }
 }
 //# sourceMappingURL=harbour-cordova-sdk.js.map
