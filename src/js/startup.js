@@ -18,6 +18,9 @@ export function initializeAsync(opts) {
   return new Promise(resolve => {
     UI.addLoader(opts);
     resolve();
+    if (window.navigator && window.navigator.splashscreen) {
+      window.navigator.splashscreen.hide();
+    }
 
     player.setAppId(g_facebookAppId);
 
