@@ -120,7 +120,9 @@ var styles = {
     'margin-top': '20px',
     color: 'white',
     'font-size': '16px',
-    'font-weight': 'bold'
+    'font-weight': 'bold',
+    'font-family': 'inherit',
+    'text-shadow': '0 0 5px black'
   },
   loginButton: {
     position: 'absolute',
@@ -144,11 +146,12 @@ var styles = {
     width: '24px',
     height: '24px'
   },
-  loginText: {
+  buttonText: {
     'margin-left': '24px',
     'margin-top': '2px',
     color: 'white',
-    'font-size': '16px'
+    'font-size': '16px',
+    'font-family': 'inherit'
   },
   errorText: {
     'z-index': '1',
@@ -156,7 +159,9 @@ var styles = {
     padding: '20px',
     color: 'red',
     'font-size': '16px',
-    'text-align': 'center'
+    'font-family': 'inherit',
+    'text-align': 'center',
+    'text-shadow': '0 0 5px black'
   }
 };
 
@@ -183,7 +188,7 @@ function addLoader(opts) {
     icon_style = resolveStyles(styles.icon);
   }
 
-  var html = "<div id='harbour-loader' style='".concat(loader_style, "'>\n  <div style='").concat(resolveStyles(styles.cover), "'></div>\n    <div style='").concat(resolveStyles(styles.middleLoader), "'>\n      <div style='").concat(resolveStyles(styles.spinner), "'></div>\n      <div style='").concat(icon_style, "'></div>\n    </div>\n    <div id='harbour-loader-text' style='").concat(resolveStyles(styles.loaderText), "'>0% Loaded</div>\n</div>");
+  var html = "<div id='harbour-loader' style='".concat(loader_style, "'>\n  <div class='harbour-cover' style='").concat(resolveStyles(styles.cover), "'></div>\n  <div class='harbour-loader' style='").concat(resolveStyles(styles.middleLoader), "'>\n    <div class='harbour-spinner' style='").concat(resolveStyles(styles.spinner), "'></div>\n    <div class='harbour-spinner-icon' style='").concat(icon_style, "'></div>\n  </div>\n  <div id='harbour-loader-text' style='").concat(resolveStyles(styles.loaderText), "'>0% Loaded</div>\n</div>");
   var temp = document.createElement('div');
   temp.innerHTML = html;
   document.body.appendChild(temp.firstChild);
@@ -205,7 +210,7 @@ function setLoaderText(text) {
 }
 
 function addLoginButton() {
-  var html = "<div id='harbour-loader-login-button' style='".concat(resolveStyles(styles.loginButton), "' onclick='window.HarbourSDK.player.onLoginButtonPress()'>\n  <svg xmlns='http://www.w3.org/2000/svg' style='").concat(resolveStyles(styles.loginIcon), "' viewBox='0 0 216 216' color='#FFFFFF'>\n    <path fill='#FFFFFF' d='\n M204.1 0H11.9C5.3 0 0 5.3 0 11.9v192.2c0 6.6 5.3 11.9 11.9\n 11.9h103.5v-83.6H87.2V99.8h28.1v-24c0-27.9 17-43.1 41.9-43.1\n 11.9 0 22.2.9 25.2 1.3v29.2h-17.3c-13.5 0-16.2 6.4-16.2\n 15.9v20.8h32.3l-4.2 32.6h-28V216h55c6.6 0 11.9-5.3\n 11.9-11.9V11.9C216 5.3 210.7 0 204.1 0z'>\n    </path>\n  </svg>\n  <div style='").concat(resolveStyles(styles.loginText), "'>Continue With Facebook</div>\n</div>");
+  var html = "<div id='harbour-loader-login-button' style='".concat(resolveStyles(styles.loginButton), "' onclick='window.HarbourSDK.player.onLoginButtonPress()'>\n  <svg xmlns='http://www.w3.org/2000/svg' style='").concat(resolveStyles(styles.loginIcon), "' viewBox='0 0 216 216' color='#FFFFFF'>\n    <path fill='#FFFFFF' d='\n M204.1 0H11.9C5.3 0 0 5.3 0 11.9v192.2c0 6.6 5.3 11.9 11.9\n 11.9h103.5v-83.6H87.2V99.8h28.1v-24c0-27.9 17-43.1 41.9-43.1\n 11.9 0 22.2.9 25.2 1.3v29.2h-17.3c-13.5 0-16.2 6.4-16.2\n 15.9v20.8h32.3l-4.2 32.6h-28V216h55c6.6 0 11.9-5.3\n 11.9-11.9V11.9C216 5.3 210.7 0 204.1 0z'>\n    </path>\n  </svg>\n  <div style='").concat(resolveStyles(styles.buttonText), "'>Continue With Facebook</div>\n</div>");
 
   _appendHtmlToLoader(html);
 }
