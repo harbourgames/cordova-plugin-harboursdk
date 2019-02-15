@@ -17,7 +17,7 @@ const styles = {
     bottom: 0,
     left: 0,
     right: 0,
-    background: 'black center center no-repeat',
+    background: 'transparent center center no-repeat',
     'background-size': 'cover',
 
     display: 'flex',

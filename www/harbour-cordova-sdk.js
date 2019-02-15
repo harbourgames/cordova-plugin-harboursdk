@@ -63,7 +63,7 @@ var styles = {
     bottom: 0,
     left: 0,
     right: 0,
-    background: 'black center center no-repeat',
+    background: 'transparent center center no-repeat',
     'background-size': 'cover',
     display: 'flex',
     'flex-direction': 'column',
@@ -427,13 +427,17 @@ function initializeAsync(opts) {
   return new Promise(function (resolve) {
     UI.addLoader(opts);
     resolve();
-
-    if (window.navigator && window.navigator.splashscreen) {
-      window.navigator.splashscreen.hide();
-    }
-
     player.setAppId(g_facebookAppId);
-    asyncSeries([_deviceReady, player.checkLoginStatus], function () {
+    asyncSeries([function (done) {
+      return _deviceReady(function () {
+        done();
+        setTimeout(function () {
+          if (window.navigator && window.navigator.splashscreen) {
+            window.navigator.splashscreen.hide();
+          }
+        }, 100);
+      });
+    }, player.checkLoginStatus], function () {
       if (!player.isLoggedIn() && g_requiresLogin) {
         UI.addLoginButton();
       }

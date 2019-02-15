@@ -18,23 +18,26 @@ export function initializeAsync(opts) {
   return new Promise(resolve => {
     UI.addLoader(opts);
     resolve();
-    if (window.navigator && window.navigator.splashscreen) {
-      window.navigator.splashscreen.hide();
-    }
 
     player.setAppId(g_facebookAppId);
 
     asyncSeries([
-        _deviceReady,
-        player.checkLoginStatus,
-      ],
-      () => {
-        if (!player.isLoggedIn() && g_requiresLogin) {
-          UI.addLoginButton();
-        }
-        _heyzapInit();
+      done => _deviceReady(() => {
+        done();
+        setTimeout(() => {
+          if (window.navigator && window.navigator.splashscreen) {
+            window.navigator.splashscreen.hide();
+          }
+        },100);
+      }),
+      player.checkLoginStatus,
+    ],
+    () => {
+      if (!player.isLoggedIn() && g_requiresLogin) {
+        UI.addLoginButton();
       }
-    );
+      _heyzapInit();
+    });
   });
 }
 export function setLoadingProgress(progress) {
