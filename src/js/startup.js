@@ -1,7 +1,8 @@
 
 import { asyncSeries, } from "./tools/util.js";
 import UI from "./ui";
-import { player } from "./player"
+import { player } from "./player";
+import { payments } from "./payments";
 
 let g_facebookAppId;
 let g_requiresLogin;
@@ -14,12 +15,11 @@ export function initializeAsync(opts) {
   g_facebookAppId = opts.facebookAppId;
   g_requiresLogin = opts.requiresLogin || false;
   g_heyzapPublisherId = opts.heyzapPublisherId;
+  player.init(opts);
 
   return new Promise(resolve => {
     UI.addLoader(opts);
     resolve();
-
-    player.setAppId(g_facebookAppId);
 
     asyncSeries([
       done => _deviceReady(() => {
@@ -37,6 +37,7 @@ export function initializeAsync(opts) {
         UI.addLoginButton();
       }
       _heyzapInit();
+      payments.init(opts);
     });
   });
 }

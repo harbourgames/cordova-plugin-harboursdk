@@ -2,7 +2,7 @@
 import UI from "./ui";
 
 export const player = {
-  setAppId,
+  init,
   isLoggedIn,
   checkLoginStatus,
   login,
@@ -25,7 +25,7 @@ export const player = {
   subscribeBotAsync,
 };
 
-let g_appId;
+let g_facebookAppId;
 let g_isLoggedIn = false;
 let g_uid;
 let g_email;
@@ -35,8 +35,8 @@ let g_signedRequest;
 let g_accessToken;
 let g_loginSuccessCallback;
 
-function setAppId(app_id) {
-  g_appId = app_id;
+function init(opts) {
+  g_facebookAppId = opts.facebookAppId;
 }
 function isLoggedIn() {
   return g_isLoggedIn;
@@ -151,7 +151,7 @@ function getSignedPlayerInfoAsync() {
   return Promise.resolve({
     getSignature: () => g_signedRequest,
     getPlayerID: getID,
-    getAppID: () => g_appId,
+    getAppID: () => g_facebookAppId,
     getAccessToken: () => g_accessToken,
   });
 }

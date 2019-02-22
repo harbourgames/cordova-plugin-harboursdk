@@ -235,7 +235,7 @@ function _appendHtmlToLoader(html) {
 }
 
 var player = {
-  setAppId: setAppId,
+  init: init,
   isLoggedIn: isLoggedIn,
   checkLoginStatus: checkLoginStatus,
   login: login,
@@ -256,7 +256,7 @@ var player = {
   canSubscribeBotAsync: canSubscribeBotAsync,
   subscribeBotAsync: subscribeBotAsync
 };
-var g_appId;
+var g_facebookAppId;
 var g_isLoggedIn = false;
 var g_uid;
 var g_email;
@@ -266,8 +266,8 @@ var g_signedRequest;
 var g_accessToken;
 var g_loginSuccessCallback;
 
-function setAppId(app_id) {
-  g_appId = app_id;
+function init(opts) {
+  g_facebookAppId = opts.facebookAppId;
 }
 
 function isLoggedIn() {
@@ -398,7 +398,7 @@ function getSignedPlayerInfoAsync() {
     },
     getPlayerID: getID,
     getAppID: function getAppID() {
-      return g_appId;
+      return g_facebookAppId;
     },
     getAccessToken: function getAccessToken() {
       return g_accessToken;
@@ -422,17 +422,215 @@ function _getUrl(obj) {
   return obj && obj.data && obj.data.url;
 }
 
-var g_facebookAppId;
+var payments = {
+  init: init$1,
+  onReady: onReady,
+  getCatalogAsync: getCatalogAsync,
+  purchaseAsync: purchaseAsync,
+  consumePurchaseAsync: consumePurchaseAsync
+};
+var ERROR_MAP = {
+  '6777006': {
+    code: 'USER_INPUT'
+  }
+};
+var g_storeKit;
+var g_ready = false;
+var g_readyList = [];
+var g_skuList;
+var g_productList;
+var g_purchaseDone;
+
+function init$1(opts) {
+  g_skuList = opts.skuList;
+  g_storeKit = window.storekit;
+  g_storeKit.init({
+    error: _onError,
+    ready: _onReady,
+    purchase: _onPurchase,
+    purchaseEnqueued: _onPurchaseEnqueued,
+    purchasing: _onPurchasing,
+    finish: _onFinish,
+    restore: _onRestore,
+    receiptsRefreshed: _onReceiptsRefreshed,
+    restoreFailed: _onRestoreFailed,
+    restoreCompleted: _onRestoreCompleted
+  });
+}
+
+function onReady(done) {
+  if (g_ready) {
+    done(g_ready);
+  } else {
+    g_readyList.push(done);
+  }
+}
+
+function getCatalogAsync() {
+  return Promise.resolve(g_productList);
+}
+
+function purchaseAsync(params) {
+  var productID = params.productID;
+  var product = g_productList.find(function (product) {
+    return product.productID === productID;
+  });
+
+  if (product) {
+    g_storeKit.purchase(productID, 1);
+    return new Promise(function (resolve, reject) {
+      g_purchaseDone = function g_purchaseDone(err, purchase) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(purchase);
+        }
+      };
+    });
+  } else {
+    return Promise.reject('bad_product_id');
+  }
+}
+
+function consumePurchaseAsync(transaction_id) {
+  g_storeKit.finish(transaction_id);
+  return Promise.resolve();
+}
+
+function _onError(err) {
+  if (g_purchaseDone) {
+    g_purchaseDone(ERROR_MAP[err] || err);
+    g_purchaseDone = null;
+  }
+}
+
+function _onReady() {
+  g_storeKit.load(g_skuList, function (valid_list) {
+    g_productList = valid_list.map(_transformProduct);
+    g_ready = true;
+    g_readyList.forEach(function (cb) {
+      return cb();
+    });
+    g_readyList.length = 0;
+  }, function (err) {
+    console.error("HarbourSDK.iap_ios: load error:", err);
+  });
+}
+
+function _transformProduct(product) {
+  return {
+    title: product.title,
+    productID: product.id,
+    description: product.description,
+    imageURL: null,
+    price: product.price,
+    priceCurrencyCode: product.currency
+  };
+}
+
+function _onPurchasing(product_id) {
+  var transaction_id = g_storeKit.transactionForProduct[product_id];
+
+  if (transaction_id) {
+    _onPurchase(transaction_id, product_id);
+  }
+}
+
+function _onPurchase(transaction_id, product_id) {
+  if (product_id && transaction_id) {
+    // store and localstorage, because the kit doesnt
+    g_storeKit.transactionForProduct[product_id] = transaction_id;
+    window.localStorage.sk_transactionForProduct = JSON.stringify(g_storeKit.transactionForProduct);
+  }
+
+  var receipt_b64 = g_storeKit.receiptForTransaction[transaction_id];
+
+  if (g_purchaseDone && transaction_id && receipt_b64) {
+    var is_sandbox = false;
+
+    try {
+      var receipt = atob(receipt_b64);
+      is_sandbox = receipt && receipt.indexOf('"environment" = "Sandbox"') !== -1;
+    } catch (e) {// noop
+    }
+
+    var data = {
+      signedRequest: receipt_b64,
+      purchaseToken: transaction_id,
+      paymentID: transaction_id,
+      productID: product_id,
+      storeType: 'itunes',
+      isSandbox: is_sandbox
+    };
+    g_purchaseDone(null, data);
+    g_purchaseDone = null;
+  }
+}
+
+function _onPurchaseEnqueued() {//console.log("onPurchaseEnqueued:",product_id);
+}
+
+function _onFinish(transaction_id, product_id) {
+  if (g_storeKit.transactionForProduct[product_id] === transaction_id) {
+    delete g_storeKit.transactionForProduct[product_id];
+    window.localStorage.sk_transactionForProduct = JSON.stringify(g_storeKit.transactionForProduct);
+  }
+}
+
+function _onRestore() {//console.log("onRestore:",product_id);
+}
+
+function _onReceiptsRefreshed() {//console.log("onReceiptsRefreshed:",product_id);
+}
+
+function _onRestoreFailed() {//console.log("onRestoreFailed:",err);
+}
+
+function _onRestoreCompleted() {//console.log("onRestoreCompleted:",product_id);
+}
+
+var payments$1;
+var default_payments = {
+  init: init$2,
+  onReady: onReady$1,
+  getCatalogAsync: getCatalogAsync$1,
+  purchaseAsync: purchaseAsync$1,
+  consumePurchaseAsync: consumePurchaseAsync$1
+};
+
+if (window.cordova.platformId === 'ios') {
+  payments$1 = payments;
+} else {
+  payments$1 = default_payments;
+}
+
+function init$2() {}
+
+function onReady$1() {}
+
+function getCatalogAsync$1() {
+  return Promise.reject('not_implemented');
+}
+
+function purchaseAsync$1() {
+  return Promise.reject('not_implemented');
+}
+
+function consumePurchaseAsync$1() {
+  return Promise.reject('not_implemented');
+}
+
+var g_facebookAppId$1;
 var g_requiresLogin;
 var g_heyzapPublisherId;
 function initializeAsync(opts) {
-  g_facebookAppId = opts.facebookAppId;
+  g_facebookAppId$1 = opts.facebookAppId;
   g_requiresLogin = opts.requiresLogin || false;
   g_heyzapPublisherId = opts.heyzapPublisherId;
+  player.init(opts);
   return new Promise(function (resolve) {
     UI.addLoader(opts);
     resolve();
-    player.setAppId(g_facebookAppId);
     asyncSeries([function (done) {
       return _deviceReady(function () {
         done();
@@ -448,6 +646,8 @@ function initializeAsync(opts) {
       }
 
       _heyzapInit();
+
+      payments$1.init(opts);
     });
   });
 }
@@ -545,25 +745,10 @@ function getLeaderboardAsync() {
   });
 }
 
-var payments = {
-  onReady: onReady,
-  getCatalogAsync: getCatalogAsync,
-  purchaseAsync: purchaseAsync,
-  consumePurchaseAsync: consumePurchaseAsync
-};
-
-function onReady() {}
-
-function getCatalogAsync() {}
-
-function purchaseAsync() {}
-
-function consumePurchaseAsync() {}
-
 var HarbourSDK = {
   player: player,
   context: context,
-  payments: payments,
+  payments: payments$1,
   getLocale: getLocale,
   initializeAsync: initializeAsync,
   setLoadingProgress: setLoadingProgress,

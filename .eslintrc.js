@@ -26,10 +26,7 @@ module.exports = {
         ],
         "callback-return": "off",
         "camelcase": "off",
-        "capitalized-comments": [
-            "error",
-            "always"
-        ],
+        "capitalized-comments": "off",
         "class-methods-use-this": "error",
         "comma-dangle": "off",
         "comma-spacing": "off",
@@ -63,7 +60,7 @@ module.exports = {
         "guard-for-in": "off",
         "handle-callback-err": "off",
         "id-blacklist": "error",
-        "id-length": ["error", { exceptions: ["s","i","j","x","y","z",] }],
+        "id-length": ["error", { exceptions: ["e","s","i","j","x","y","z",] }],
         "id-match": "error",
         "implicit-arrow-linebreak": "error",
         "indent": "off",
@@ -218,7 +215,7 @@ module.exports = {
         "prefer-numeric-literals": "error",
         "prefer-object-spread": "error",
         "prefer-promise-reject-errors": "off",
-        "prefer-reflect": "error",
+        "prefer-reflect": "off",
         "prefer-rest-params": "error",
         "prefer-spread": "error",
         "prefer-template": "off",
@@ -247,10 +244,7 @@ module.exports = {
         ],
         "space-infix-ops": "error",
         "space-unary-ops": "error",
-        "spaced-comment": [
-            "error",
-            "always"
-        ],
+        "spaced-comment": "off",
         "strict": "error",
         "switch-colon-spacing": "error",
         "symbol-description": "error",
