@@ -32,7 +32,13 @@ function onReady(done) {
   }
 }
 function getCatalogAsync() {
-  return Promise.resolve([]);
+  return new Promise((resolve,reject) => {
+    g_inappbilling.getAvailableProducts(list => {
+      resolve(list);
+    },err => {
+      reject(err);
+    });
+  });
 }
 
 function purchaseAsync(params) {

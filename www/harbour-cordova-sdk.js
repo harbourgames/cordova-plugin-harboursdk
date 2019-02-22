@@ -624,7 +624,13 @@ function onReady$1(done) {
 }
 
 function getCatalogAsync$1() {
-  return Promise.resolve([]);
+  return new Promise(function (resolve, reject) {
+    g_inappbilling.getAvailableProducts(function (list) {
+      resolve(list);
+    }, function (err) {
+      reject(err);
+    });
+  });
 }
 
 function purchaseAsync$1(params) {
