@@ -39,7 +39,7 @@ function init(opts) {
 
 function onReady(done) {
   if (g_ready) {
-    done(g_ready);
+    done();
   } else {
     g_readyList.push(done);
   }

@@ -1,5 +1,6 @@
 
 import * as iap_ios from './iap_ios.js';
+import * as iap_android from './iap_android.js';
 
 export let payments;
 
@@ -13,6 +14,8 @@ const default_payments = {
 
 if (window.cordova.platformId === 'ios') {
   payments = iap_ios.payments;
+} else if (window.cordova.platformId === 'android') {
+  payments = iap_android.payments;
 } else {
   payments = default_payments;
 }

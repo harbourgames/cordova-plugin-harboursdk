@@ -460,7 +460,7 @@ function init$1(opts) {
 
 function onReady(done) {
   if (g_ready) {
-    done(g_ready);
+    done();
   } else {
     g_readyList.push(done);
   }
@@ -589,34 +589,143 @@ function _onRestoreFailed() {//console.log("onRestoreFailed:",err);
 function _onRestoreCompleted() {//console.log("onRestoreCompleted:",product_id);
 }
 
-var payments$1;
-var default_payments = {
+var payments$1 = {
   init: init$2,
   onReady: onReady$1,
   getCatalogAsync: getCatalogAsync$1,
   purchaseAsync: purchaseAsync$1,
   consumePurchaseAsync: consumePurchaseAsync$1
 };
+var g_inappbilling;
+var g_ready$1 = false;
+var g_readyList$1 = [];
+var g_tokenToProductMap = {};
 
-if (window.cordova.platformId === 'ios') {
-  payments$1 = payments;
-} else {
-  payments$1 = default_payments;
+function init$2() {
+  g_inappbilling = window.inappbilling;
+  var opts = {};
+  var skus = [];
+  g_inappbilling.init(function () {
+    g_ready$1 = true;
+    g_readyList$1.forEach(function (cb) {
+      return cb();
+    });
+  }, function (err) {
+    console.error("iap_android init err:", err);
+  }, opts, skus);
 }
 
-function init$2() {}
-
-function onReady$1() {}
+function onReady$1(done) {
+  if (g_ready$1) {
+    done();
+  } else {
+    g_readyList$1.push(done);
+  }
+}
 
 function getCatalogAsync$1() {
+  return Promise.resolve([]);
+}
+
+function purchaseAsync$1(params) {
+  var productID = params.productID,
+      developerPayload = params.developerPayload;
+  return new Promise(function (resolve, reject) {
+    g_inappbilling.buy(function (purchase) {
+      resolve(_transformPurchase(purchase));
+    }, function (err) {
+      if (typeof err === 'string' && err.indexOf('response: 7:Error') !== -1) {
+        _getOwnedPurchase(productID, function (err, purchase) {
+          if (err) {
+            console.error("buy second err:", err);
+          } else {
+            resolve(_transformPurchase(purchase));
+          }
+        });
+      } else {
+        console.error("buy err:", err);
+        reject(err);
+      }
+    }, productID, developerPayload);
+  });
+}
+
+function consumePurchaseAsync$1(purchase_token) {
+  return new Promise(function (resolve, reject) {
+    var product_id = g_tokenToProductMap[purchase_token];
+    g_inappbilling.consumePurchase(function () {
+      resolve();
+    }, function (err) {
+      console.error("consumePurchase err:", err);
+      reject(err);
+    }, product_id, purchase_token);
+  });
+}
+
+function _transformPurchase(purchase) {
+  var purchaseToken = purchase.purchaseToken,
+      productId = purchase.productId;
+  g_tokenToProductMap[purchaseToken] = productId;
+  return {
+    purchaseToken: purchaseToken,
+    paymentID: purchase.orderId,
+    productID: productId,
+    storeType: 'play',
+    isSandbox: true,
+    purchaseTime: purchase.purchaseTime,
+    playReceipt: purchase.receipt,
+    playSignature: purchase.signature,
+    playPurchaseState: purchase.purchaseState
+  };
+}
+
+function _getOwnedPurchase(product_id, done) {
+  g_inappbilling.getPurchases(function (list) {
+    var purchase = list.find(function (item) {
+      return item.productId === product_id;
+    });
+
+    if (purchase) {
+      done(null, purchase);
+    } else {
+      done('failed_get_owned');
+    }
+  }, function (err) {
+    console.error("_getOwnedPurchase: err:", err);
+    done(err);
+  });
+}
+
+var payments$2;
+var default_payments = {
+  init: init$3,
+  onReady: onReady$2,
+  getCatalogAsync: getCatalogAsync$2,
+  purchaseAsync: purchaseAsync$2,
+  consumePurchaseAsync: consumePurchaseAsync$2
+};
+
+if (window.cordova.platformId === 'ios') {
+  payments$2 = payments;
+} else if (window.cordova.platformId === 'android') {
+  payments$2 = payments$1;
+} else {
+  payments$2 = default_payments;
+}
+
+function init$3() {}
+
+function onReady$2() {}
+
+function getCatalogAsync$2() {
   return Promise.reject('not_implemented');
 }
 
-function purchaseAsync$1() {
+function purchaseAsync$2() {
   return Promise.reject('not_implemented');
 }
 
-function consumePurchaseAsync$1() {
+function consumePurchaseAsync$2() {
   return Promise.reject('not_implemented');
 }
 
@@ -647,7 +756,7 @@ function initializeAsync(opts) {
 
       _heyzapInit();
 
-      payments$1.init(opts);
+      payments$2.init(opts);
     });
   });
 }
@@ -748,7 +857,7 @@ function getLeaderboardAsync() {
 var HarbourSDK = {
   player: player,
   context: context,
-  payments: payments$1,
+  payments: payments$2,
   getLocale: getLocale,
   initializeAsync: initializeAsync,
   setLoadingProgress: setLoadingProgress,
