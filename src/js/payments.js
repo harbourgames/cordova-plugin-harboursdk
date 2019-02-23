@@ -2,9 +2,7 @@
 import * as iap_ios from './iap_ios.js';
 import * as iap_android from './iap_android.js';
 
-export let payments;
-
-const default_payments = {
+export const payments = {
   init,
   onReady,
   getCatalogAsync,
@@ -12,15 +10,14 @@ const default_payments = {
   consumePurchaseAsync,
 };
 
-if (window.cordova.platformId === 'ios') {
-  payments = iap_ios.payments;
-} else if (window.cordova.platformId === 'android') {
-  payments = iap_android.payments;
-} else {
-  payments = default_payments;
-}
-
-function init() {
+function init(params) {
+  if (window.cordova.platformId === 'ios') {
+    Object.assign(payments,iap_ios.payments);
+    iap_ios.payments.init(params);
+  } else if (window.cordova.platformId === 'android') {
+    Object.assign(payments,iap_android.payments);
+    iap_android.payments.init(params);
+  }
 }
 function onReady() {
 }

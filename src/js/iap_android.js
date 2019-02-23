@@ -12,11 +12,11 @@ let g_ready = false;
 const g_readyList = [];
 const g_tokenToProductMap = {};
 
-function init() {
+function init(params) {
   g_inappbilling = window.inappbilling;
 
-  const opts = {};
-  const skus = [];
+  const opts = { showLog: false };
+  const skus = params.skuList || [];
   g_inappbilling.init(() => {
     g_ready = true;
     g_readyList.forEach(cb => cb());
@@ -34,7 +34,8 @@ function onReady(done) {
 function getCatalogAsync() {
   return new Promise((resolve,reject) => {
     g_inappbilling.getAvailableProducts(list => {
-      resolve(list);
+      const product_list = list && list.map(_transformProduct);
+      resolve(product_list);
     },err => {
       reject(err);
     });
@@ -43,6 +44,13 @@ function getCatalogAsync() {
 
 function purchaseAsync(params) {
   const { productID, developerPayload } = params;
+
+  const additionalData = {};
+  if (developerPayload === 'string') {
+    additionalData.developerPayload = developerPayload;
+  } else if (developerPayload) {
+    additionalData.developerPayload = JSON.stringify(developerPayload);
+  }
 
   return new Promise((resolve,reject) => {
     g_inappbilling.buy(purchase => {
@@ -57,10 +65,14 @@ function purchaseAsync(params) {
           }
         });
       } else {
-        console.error("buy err:",err);
+        if (typeof err === 'string' && err.indexOf('User canceled') !== -1) {
+          err = { code: 'USER_INPUT' };
+        } else {
+          console.error("buy err:",err);
+        }
         reject(err);
       }
-    },productID,developerPayload);
+    },productID,additionalData);
   });
 }
 function consumePurchaseAsync(purchase_token) {
@@ -84,11 +96,21 @@ function _transformPurchase(purchase) {
     paymentID: purchase.orderId,
     productID: productId,
     storeType: 'play',
-    isSandbox: true,
+    isSandbox: false,
     purchaseTime: purchase.purchaseTime,
     playReceipt: purchase.receipt,
     playSignature: purchase.signature,
     playPurchaseState: purchase.purchaseState,
+  };
+}
+function _transformProduct(product) {
+  return {
+    title: product.title,
+    productID: product.productId,
+    description: product.description,
+    imageURL: null,
+    price: product.price,
+    priceCurrencyCode: product.price_currency_code,
   };
 }
 

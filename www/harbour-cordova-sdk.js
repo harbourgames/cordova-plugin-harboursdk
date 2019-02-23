@@ -601,10 +601,12 @@ var g_ready$1 = false;
 var g_readyList$1 = [];
 var g_tokenToProductMap = {};
 
-function init$2() {
+function init$2(params) {
   g_inappbilling = window.inappbilling;
-  var opts = {};
-  var skus = [];
+  var opts = {
+    showLog: false
+  };
+  var skus = params.skuList || [];
   g_inappbilling.init(function () {
     g_ready$1 = true;
     g_readyList$1.forEach(function (cb) {
@@ -626,7 +628,8 @@ function onReady$1(done) {
 function getCatalogAsync$1() {
   return new Promise(function (resolve, reject) {
     g_inappbilling.getAvailableProducts(function (list) {
-      resolve(list);
+      var product_list = list && list.map(_transformProduct$1);
+      resolve(product_list);
     }, function (err) {
       reject(err);
     });
@@ -636,6 +639,14 @@ function getCatalogAsync$1() {
 function purchaseAsync$1(params) {
   var productID = params.productID,
       developerPayload = params.developerPayload;
+  var additionalData = {};
+
+  if (developerPayload === 'string') {
+    additionalData.developerPayload = developerPayload;
+  } else if (developerPayload) {
+    additionalData.developerPayload = JSON.stringify(developerPayload);
+  }
+
   return new Promise(function (resolve, reject) {
     g_inappbilling.buy(function (purchase) {
       resolve(_transformPurchase(purchase));
@@ -649,10 +660,17 @@ function purchaseAsync$1(params) {
           }
         });
       } else {
-        console.error("buy err:", err);
+        if (typeof err === 'string' && err.indexOf('User canceled') !== -1) {
+          err = {
+            code: 'USER_INPUT'
+          };
+        } else {
+          console.error("buy err:", err);
+        }
+
         reject(err);
       }
-    }, productID, developerPayload);
+    }, productID, additionalData);
   });
 }
 
@@ -677,11 +695,22 @@ function _transformPurchase(purchase) {
     paymentID: purchase.orderId,
     productID: productId,
     storeType: 'play',
-    isSandbox: true,
+    isSandbox: false,
     purchaseTime: purchase.purchaseTime,
     playReceipt: purchase.receipt,
     playSignature: purchase.signature,
     playPurchaseState: purchase.purchaseState
+  };
+}
+
+function _transformProduct$1(product) {
+  return {
+    title: product.title,
+    productID: product.productId,
+    description: product.description,
+    imageURL: null,
+    price: product.price,
+    priceCurrencyCode: product.price_currency_code
   };
 }
 
@@ -702,8 +731,7 @@ function _getOwnedPurchase(product_id, done) {
   });
 }
 
-var payments$2;
-var default_payments = {
+var payments$2 = {
   init: init$3,
   onReady: onReady$2,
   getCatalogAsync: getCatalogAsync$2,
@@ -711,15 +739,15 @@ var default_payments = {
   consumePurchaseAsync: consumePurchaseAsync$2
 };
 
-if (window.cordova.platformId === 'ios') {
-  payments$2 = payments;
-} else if (window.cordova.platformId === 'android') {
-  payments$2 = payments$1;
-} else {
-  payments$2 = default_payments;
+function init$3(params) {
+  if (window.cordova.platformId === 'ios') {
+    Object.assign(payments$2, payments);
+    payments.init(params);
+  } else if (window.cordova.platformId === 'android') {
+    Object.assign(payments$2, payments$1);
+    payments$1.init(params);
+  }
 }
-
-function init$3() {}
 
 function onReady$2() {}
 

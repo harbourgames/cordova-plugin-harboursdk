@@ -148,7 +148,7 @@ module.exports = {
         "no-new-require": "error",
         "no-new-wrappers": "error",
         "no-octal-escape": "error",
-        "no-param-reassign": "error",
+        "no-param-reassign": "off",
         "no-path-concat": "error",
         "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
         "no-process-env": "error",
